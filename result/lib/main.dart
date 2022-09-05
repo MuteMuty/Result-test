@@ -38,19 +38,45 @@ class _MyHomePageState extends State<MyHomePage> {
     "blog",
   ];
   List _naslovi = <String>[];
-  double _skupniCasIzvajanja = 0.0;
+  int _skupniCasIzvajanja = 0;
   int _skupnoStKlicev = 0;
   int _stUspesnihKlicev = 0;
 
+  String _getTitle(String body) {
+    final int index = body.indexOf('<title>');
+    if (index == -1) {
+      return '';
+    }
+    final int endIndex = body.indexOf('</title>', index);
+    if (endIndex == -1) {
+      return '';
+    }
+    return body
+        .substring(index + 7, endIndex)
+        .replaceAll(RegExp(r'&ndash;'), '|');
+  }
+
+  void _checkResponse(List results) {
+    for (var result in results) {
+      if (result.statusCode == 200) {
+        _stUspesnihKlicev++;
+        _naslovi.add(_getTitle(result.body));
+      } else {
+        print('Request failed with status: ${result.statusCode}.');
+      }
+    }
+  }
+
   void _fetchSites(int stStrani) async {
+    _naslovi.clear();
     if (stStrani > 4 || stStrani < 1) {
       _showMyDialog();
       return;
     }
-    _skupnoStKlicev += stStrani;
+    _skupnoStKlicev += 4;
     List urls = <Uri>[];
     for (var i = 0; i < 4; i++) {
-      urls[i] = Uri.https('www.result.si', _spletneStrani[i]);
+      urls.add(Uri.https('www.result.si', _spletneStrani[i]));
     }
     final stopwatch = Stopwatch()..start();
     switch (stStrani) {
@@ -60,7 +86,7 @@ class _MyHomePageState extends State<MyHomePage> {
           var response = await http.get(url);
           if (response.statusCode == 200) {
             _stUspesnihKlicev++;
-            print('Number of books about http: ${response.body}.');
+            _naslovi.add(_getTitle(response.body));
           } else {
             print('Request failed with status: ${response.statusCode}.');
           }
@@ -71,26 +97,12 @@ class _MyHomePageState extends State<MyHomePage> {
           http.get(urls[0]),
           http.get(urls[1]),
         ]);
-        for (var result in results) {
-          if (result.statusCode == 200) {
-            _stUspesnihKlicev++;
-            print('Number of books about http: ${result.body}.');
-          } else {
-            print('Request failed with status: ${result.statusCode}.');
-          }
-        }
+        _checkResponse(results);
         results = await Future.wait([
           http.get(urls[2]),
           http.get(urls[3]),
         ]);
-        for (var result in results) {
-          if (result.statusCode == 200) {
-            _stUspesnihKlicev++;
-            print('Number of books about http: ${result.body}.');
-          } else {
-            print('Request failed with status: ${result.statusCode}.');
-          }
-        }
+        _checkResponse(results);
         break;
       case 3:
         var results = await Future.wait([
@@ -98,25 +110,11 @@ class _MyHomePageState extends State<MyHomePage> {
           http.get(urls[1]),
           http.get(urls[2]),
         ]);
-        for (var result in results) {
-          if (result.statusCode == 200) {
-            _stUspesnihKlicev++;
-            print('Number of books about http: ${result.body}.');
-          } else {
-            print('Request failed with status: ${result.statusCode}.');
-          }
-        }
+        _checkResponse(results);
         results = await Future.wait([
           http.get(urls[3]),
         ]);
-        for (var result in results) {
-          if (result.statusCode == 200) {
-            _stUspesnihKlicev++;
-            print('Number of books about http: ${result.body}.');
-          } else {
-            print('Request failed with status: ${result.statusCode}.');
-          }
-        }
+        _checkResponse(results);
         break;
       case 4:
         var results = await Future.wait([
@@ -125,19 +123,12 @@ class _MyHomePageState extends State<MyHomePage> {
           http.get(urls[2]),
           http.get(urls[3]),
         ]);
-        for (var result in results) {
-          if (result.statusCode == 200) {
-            _stUspesnihKlicev++;
-            print('Number of books about http: ${result.body}.');
-          } else {
-            print('Request failed with status: ${result.statusCode}.');
-          }
-        }
+        _checkResponse(results);
         break;
       default:
     }
     setState(() {
-      _skupniCasIzvajanja = stopwatch.elapsed as double;
+      _skupniCasIzvajanja = stopwatch.elapsedMilliseconds;
     });
   }
 
@@ -151,7 +142,7 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text("Skupni čas izvajanja: $_skupniCasIzvajanja sekund"),
+            Text("Skupni čas izvajanja: $_skupniCasIzvajanja milisekund"),
             Text("Število uspešno izvedeni klicev: $_stUspesnihKlicev"),
             Text(
                 "Število neuspešno izvedeni klicev: ${_skupnoStKlicev - _stUspesnihKlicev}"),
@@ -183,7 +174,7 @@ class _MyHomePageState extends State<MyHomePage> {
             const SizedBox(
               height: 20,
             ),
-            Text("Naslovi: $_naslovi"),
+            for (var naslov in _naslovi) Text(naslov),
           ],
         ),
       ),
