@@ -37,7 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
     "kariera",
     "blog",
   ];
-  List _naslovi = <String>[];
+  final List _naslovi = <String>[];
   int _skupniCasIzvajanja = 0;
   int _skupnoStKlicev = 0;
   int _stUspesnihKlicev = 0;
